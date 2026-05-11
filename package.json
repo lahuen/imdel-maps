@@ -1,0 +1,23 @@
+{
+  "name": "imdel-maps",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Interactive cooperative map POC",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.14",
+    "@types/leaflet.markercluster": "^1.5.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}

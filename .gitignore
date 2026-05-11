@@ -1,0 +1,10 @@
+node_modules
+dist
+docs/
+.claude/
+.firebase/
+.env
+.env.local
+.envy-context
+.DS_Store
+*.local

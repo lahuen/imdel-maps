@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="26" fill="#EFF8FD"/>
+  <!-- Teal leaves -->
+  <path d="M60 82 C50 82 30 88 16 72 C32 64 50 73 60 76 Z" fill="#5BBFB0"/>
+  <path d="M60 82 C70 82 90 88 104 72 C88 64 70 73 60 76 Z" fill="#5BBFB0"/>
+  <!-- Left petal -->
+  <path d="M60 76 C46 66 40 40 46 18 C52 34 57 54 60 64 Z" fill="#54C5E8"/>
+  <!-- Right petal -->
+  <path d="M60 76 C74 66 80 40 74 18 C68 34 63 54 60 64 Z" fill="#54C5E8"/>
+  <!-- Center petal -->
+  <path d="M60 76 C55 50 56 28 60 10 C64 28 65 50 60 76 Z" fill="#1E9AD0"/>
+</svg>

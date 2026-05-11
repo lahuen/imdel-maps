@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/imdel-maps/' }}
+  VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Maps' }}
+  VITE_APP_SHORT_NAME: ${{ vars.VITE_APP_SHORT_NAME || 'Maps' }}
+  VITE_APP_DESCRIPTION: ${{ vars.VITE_APP_DESCRIPTION || 'Interactive cooperative map' }}
+  VITE_ORG_NAME: ${{ vars.VITE_ORG_NAME || 'Local Institution' }}
+  VITE_BRAND_LOGO: ${{ vars.VITE_BRAND_LOGO }}
+  VITE_APP_TAGLINE: ${{ vars.VITE_APP_TAGLINE || 'Cooperatives and local production' }}
+  VITE_TERRITORY_NAME: ${{ vars.VITE_TERRITORY_NAME || 'Local territory' }}
+  VITE_TERRITORY_DESCRIPTION: ${{ vars.VITE_TERRITORY_DESCRIPTION || 'A territorial platform to discover local supply, manage public profiles and plan community routes.' }}
+  VITE_ADMIN_CONTACT_EMAIL: ${{ vars.VITE_ADMIN_CONTACT_EMAIL || 'admin@example.com' }}
+  VITE_POWERED_BY_LABEL: ${{ vars.VITE_POWERED_BY_LABEL || 'Powered by Kaizen' }}
+  VITE_POWERED_BY_URL: ${{ vars.VITE_POWERED_BY_URL || 'https://www.get-kaizen.click' }}
+  VITE_AI_PROVIDER_LABEL: ${{ vars.VITE_AI_PROVIDER_LABEL || 'Gemini' }}
+  VITE_FEATURED_COOP_KEYWORD: ${{ vars.VITE_FEATURED_COOP_KEYWORD || 'semilla' }}
+  VITE_FEATURED_COOP_LABEL: ${{ vars.VITE_FEATURED_COOP_LABEL || 'Cooperativa Semilla' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
