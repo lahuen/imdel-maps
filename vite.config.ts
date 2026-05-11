@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/imdel-maps/',
+  base: process.env.VITE_BASE_PATH || '/',
   build: {
     rollupOptions: {
       output: {
@@ -19,7 +19,7 @@ export default defineConfig({
         name: process.env.VITE_APP_NAME || 'Maps',
         short_name: process.env.VITE_APP_SHORT_NAME || 'Maps',
         description: process.env.VITE_APP_DESCRIPTION || 'Interactive cooperative map',
-        start_url: process.env.VITE_BASE_PATH || '/imdel-maps/',
+        start_url: process.env.VITE_BASE_PATH || '/',
         display: 'standalone',
         background_color: process.env.VITE_PWA_BACKGROUND_COLOR || '#ffffff',
         theme_color: process.env.VITE_PWA_THEME_COLOR || '#26336b',

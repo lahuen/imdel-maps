@@ -15,7 +15,7 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/imdel-maps/' }}
+  VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
   VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Maps' }}
   VITE_APP_SHORT_NAME: ${{ vars.VITE_APP_SHORT_NAME || 'Maps' }}
   VITE_APP_DESCRIPTION: ${{ vars.VITE_APP_DESCRIPTION || 'Interactive cooperative map' }}
