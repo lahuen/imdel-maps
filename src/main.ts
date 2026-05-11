@@ -82,23 +82,20 @@ app.innerHTML = `
           <span>puntos de interes</span>
         </div>
       </div>
-      <section class="assistant-card assistant-dock" id="assistant" aria-label="Asistente territorial">
+      <section class="assistant-card assistant-dock" id="assistant" aria-label="Asistente">
         <button class="assistant-toggle" id="assistant-toggle" type="button" aria-expanded="false">
           <span class="gemini-mark" aria-label="${APP_CONFIG.aiProviderLabel}"></span>
           <div>
-            <p class="context-title">Asistente territorial</p>
+            <p class="context-title">Asistente</p>
             <p class="context-note">Abrir planificador con ${APP_CONFIG.aiProviderLabel}</p>
           </div>
         </button>
+        <button class="assistant-close" id="assistant-close" type="button" aria-label="Cerrar asistente">×</button>
         <div class="assistant-body" id="assistant-body">
           <form class="ask-form" id="ask-form">
-            <input id="ask-input" autocomplete="off" placeholder="Ej: Como llego a ${APP_CONFIG.featuredCoopLabel} desde Estacion central" />
+            <input id="ask-input" autocomplete="off" placeholder="Ej: Como llego a..." />
             <button type="submit">Planear</button>
           </form>
-          <div class="prompt-chips">
-            <button type="button" data-prompt="recorrido barato por cooperativas de alimentos desde el centro">Alimentos + bajo costo</button>
-            <button type="button" data-prompt="visitar cooperativas agro y puntos de interes cercanos">Agro + territorio</button>
-          </div>
           <div class="route-result" id="route-result"></div>
         </div>
       </section>
@@ -114,7 +111,7 @@ app.innerHTML = `
       <div class="panel-head">
         <div>
           <p class="eyebrow">Red productiva local</p>
-          <h2>Cooperativas de ${APP_CONFIG.territoryName}</h2>
+          <h2>${APP_CONFIG.panelTitle}</h2>
           <p class="sort-hint" id="sort-hint"></p>
         </div>
         <span class="count-pill" id="count-pill"></span>
@@ -608,6 +605,24 @@ document.querySelector<HTMLButtonElement>('#assistant-toggle')!.addEventListener
   if (state.assistantOpen) document.querySelector<HTMLInputElement>('#ask-input')!.focus();
 });
 
+document.querySelector<HTMLButtonElement>('#assistant-close')!.addEventListener('click', () => {
+  state.assistantOpen = false;
+  renderAssistant();
+});
+
+document.addEventListener('pointerdown', (event) => {
+  const assistant = document.querySelector<HTMLElement>('#assistant')!;
+  if (!state.assistantOpen || assistant.contains(event.target as Node)) return;
+  state.assistantOpen = false;
+  renderAssistant();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || !state.assistantOpen) return;
+  state.assistantOpen = false;
+  renderAssistant();
+});
+
 document.querySelector<HTMLFormElement>('#ask-form')!.addEventListener('submit', (event) => {
   event.preventDefault();
   const input = document.querySelector<HTMLInputElement>('#ask-input')!;
@@ -618,20 +633,6 @@ document.querySelector<HTMLFormElement>('#ask-form')!.addEventListener('submit',
   state.query = '';
   document.querySelector<HTMLInputElement>('#search-input')!.value = '';
   update();
-});
-
-document.querySelectorAll<HTMLButtonElement>('.prompt-chips button').forEach((button) => {
-  button.addEventListener('click', () => {
-    const input = document.querySelector<HTMLInputElement>('#ask-input')!;
-    input.value = button.dataset.prompt ?? '';
-    state.plan = buildPlan(input.value);
-    saveAssistantSession(input.value);
-    state.assistantOpen = true;
-    state.category = 'todas';
-    state.query = '';
-    document.querySelector<HTMLInputElement>('#search-input')!.value = '';
-    update();
-  });
 });
 
 document.querySelector<HTMLButtonElement>('#locate-button')!.addEventListener('click', () => {

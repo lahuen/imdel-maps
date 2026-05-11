@@ -1,11 +1,12 @@
 export const APP_CONFIG = {
   appName: import.meta.env.VITE_APP_NAME || 'Maps',
-  organizationName: import.meta.env.VITE_ORG_NAME || 'Local Institution',
+  organizationName: import.meta.env.VITE_ORG_NAME || 'Institucion local',
   brandLogo: import.meta.env.VITE_BRAND_LOGO || `${import.meta.env.BASE_URL}icon.svg`,
-  tagline: import.meta.env.VITE_APP_TAGLINE || 'Cooperatives and local production',
-  territoryName: import.meta.env.VITE_TERRITORY_NAME || 'Local territory',
+  tagline: import.meta.env.VITE_APP_TAGLINE || 'Cooperativas y produccion local',
+  territoryName: import.meta.env.VITE_TERRITORY_NAME || 'territorio local',
+  panelTitle: import.meta.env.VITE_PANEL_TITLE || 'Cooperativas del territorio',
   territoryDescription: import.meta.env.VITE_TERRITORY_DESCRIPTION
-    || 'A territorial platform to discover local supply, manage public profiles and plan community routes.',
+    || 'Una plataforma territorial para visibilizar oferta local, gestionar perfiles publicos y planificar recorridos comunitarios.',
   adminContactEmail: import.meta.env.VITE_ADMIN_CONTACT_EMAIL || 'admin@example.com',
   poweredByLabel: import.meta.env.VITE_POWERED_BY_LABEL || 'Powered by Kaizen',
   poweredByUrl: import.meta.env.VITE_POWERED_BY_URL || 'https://www.get-kaizen.click',

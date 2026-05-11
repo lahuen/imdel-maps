@@ -18,12 +18,13 @@ env:
   VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
   VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Maps' }}
   VITE_APP_SHORT_NAME: ${{ vars.VITE_APP_SHORT_NAME || 'Maps' }}
-  VITE_APP_DESCRIPTION: ${{ vars.VITE_APP_DESCRIPTION || 'Interactive cooperative map' }}
-  VITE_ORG_NAME: ${{ vars.VITE_ORG_NAME || 'Local Institution' }}
+  VITE_APP_DESCRIPTION: ${{ vars.VITE_APP_DESCRIPTION || 'Mapa interactivo de cooperativas' }}
+  VITE_ORG_NAME: ${{ vars.VITE_ORG_NAME || 'Institucion local' }}
   VITE_BRAND_LOGO: ${{ vars.VITE_BRAND_LOGO }}
-  VITE_APP_TAGLINE: ${{ vars.VITE_APP_TAGLINE || 'Cooperatives and local production' }}
-  VITE_TERRITORY_NAME: ${{ vars.VITE_TERRITORY_NAME || 'Local territory' }}
-  VITE_TERRITORY_DESCRIPTION: ${{ vars.VITE_TERRITORY_DESCRIPTION || 'A territorial platform to discover local supply, manage public profiles and plan community routes.' }}
+  VITE_APP_TAGLINE: ${{ vars.VITE_APP_TAGLINE || 'Cooperativas y produccion local' }}
+  VITE_TERRITORY_NAME: ${{ vars.VITE_TERRITORY_NAME || 'territorio local' }}
+  VITE_PANEL_TITLE: ${{ vars.VITE_PANEL_TITLE || 'Cooperativas del territorio' }}
+  VITE_TERRITORY_DESCRIPTION: ${{ vars.VITE_TERRITORY_DESCRIPTION || 'Una plataforma territorial para visibilizar oferta local, gestionar perfiles publicos y planificar recorridos comunitarios.' }}
   VITE_ADMIN_CONTACT_EMAIL: ${{ vars.VITE_ADMIN_CONTACT_EMAIL || 'admin@example.com' }}
   VITE_POWERED_BY_LABEL: ${{ vars.VITE_POWERED_BY_LABEL || 'Powered by Kaizen' }}
   VITE_POWERED_BY_URL: ${{ vars.VITE_POWERED_BY_URL || 'https://www.get-kaizen.click' }}

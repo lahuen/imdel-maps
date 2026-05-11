@@ -347,6 +347,28 @@ p {
   border-radius: var(--radius-lg);
 }
 
+.assistant-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  display: none;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.assistant-dock.open .assistant-close {
+  display: grid;
+}
+
 .assistant-card .context-title,
 .assistant-card .context-note {
   color: #ffffff;
@@ -368,6 +390,10 @@ p {
   padding: 0;
   text-align: left;
   cursor: pointer;
+}
+
+.assistant-dock.open .assistant-toggle {
+  padding-right: 34px;
 }
 
 .gemini-mark {
