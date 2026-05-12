@@ -17,6 +17,8 @@ import {
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
+  IonSelect,
+  IonSelectOption,
   IonToolbar,
 } from '@ionic/react';
 import {
@@ -499,22 +501,34 @@ export function App() {
   }, [assistantReply]);
 
   const selectedCoop = COOPS.find((coop) => coop.id === selectedId) ?? filteredCoops[0];
-  const searchControls = (
-    <>
-      <IonSearchbar
-        value={query}
-        placeholder="Buscar producto, barrio o nombre"
-        debounce={120}
-        onIonInput={(event) => setQuery(event.detail.value ?? '')}
-      />
-
-      <IonSegment value={category} scrollable onIonChange={(event) => setCategory(event.detail.value as Category | 'todas')}>
-        <IonSegmentButton value="todas">Todas</IonSegmentButton>
-        {Object.entries(CATEGORIES).map(([key, meta]) => (
-          <IonSegmentButton key={key} value={key}>{meta.label}</IonSegmentButton>
-        ))}
-      </IonSegment>
-    </>
+  const searchBar = (
+    <IonSearchbar
+      value={query}
+      placeholder="Buscar producto, barrio o nombre"
+      debounce={120}
+      onIonInput={(event) => setQuery(event.detail.value ?? '')}
+    />
+  );
+  const categorySegment = (
+    <IonSegment value={category} scrollable onIonChange={(event) => setCategory(event.detail.value as Category | 'todas')}>
+      <IonSegmentButton value="todas">Todas</IonSegmentButton>
+      {Object.entries(CATEGORIES).map(([key, meta]) => (
+        <IonSegmentButton key={key} value={key}>{meta.label}</IonSegmentButton>
+      ))}
+    </IonSegment>
+  );
+  const categorySelect = (
+    <IonSelect
+      aria-label="Filtrar por rubro"
+      interface="popover"
+      value={category}
+      onIonChange={(event) => setCategory(event.detail.value as Category | 'todas')}
+    >
+      <IonSelectOption value="todas">Todos los rubros</IonSelectOption>
+      {Object.entries(CATEGORIES).map(([key, meta]) => (
+        <IonSelectOption key={key} value={key}>{meta.label}</IonSelectOption>
+      ))}
+    </IonSelect>
   );
 
   function focusCoop(coop: Coop): void {
@@ -535,15 +549,6 @@ export function App() {
       reply: nextReply,
       savedAt: new Date().toISOString(),
     }));
-  }
-
-  function togglePoiKind(kind: PoiKind): void {
-    setPoiKinds((current) => {
-      const next = new Set(current);
-      if (next.has(kind)) next.delete(kind);
-      else next.add(kind);
-      return next;
-    });
   }
 
   function toggleFavorite(coopId: string): void {
@@ -604,10 +609,6 @@ export function App() {
         </div>
       </div>
 
-      <section className="sheet-section intro-section">
-        <p className="territory-copy">{APP_CONFIG.territoryDescription}</p>
-      </section>
-
       {selectedCoop && (
         <section className="sheet-section place-card">
           <div className="place-topline">
@@ -647,7 +648,7 @@ export function App() {
       <IonSegment className="sheet-nav" value={sheetView} onIonChange={(event) => setSheetView(event.detail.value as SheetView)}>
         <IonSegmentButton value="profile">Perfil</IonSegmentButton>
         {isMobile && <IonSegmentButton value="coops">Buscar</IonSegmentButton>}
-        <IonSegmentButton value="territory">Territorio</IonSegmentButton>
+        <IonSegmentButton value="territory">Sitios</IonSegmentButton>
       </IonSegment>
 
       {selectedCoop && sheetView === 'profile' && (
@@ -685,29 +686,56 @@ export function App() {
         </section>
       )}
 
+      {!isMobile && sheetView === 'profile' && (
+        <section className="sheet-section nearby-section">
+          <div className="section-row">
+            <strong>Cooperativas cercanas</strong>
+            <span>{filteredCoops.length} visibles</span>
+          </div>
+          <div className="nearby-list">
+            {filteredCoops.slice(0, 5).map((coop) => {
+              const meta = CATEGORIES[coop.category];
+              return (
+                <button
+                  key={coop.id}
+                  className={coop.id === selectedCoop?.id ? 'nearby-item selected' : 'nearby-item'}
+                  type="button"
+                  onClick={() => focusCoop(coop)}
+                >
+                  <span className="category-dot" style={{ background: meta.color }} />
+                  <span>
+                    <strong>{coop.name}</strong>
+                    <small>{meta.label} · {coop.neighborhood}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {sheetView === 'territory' && (
         <section className="sheet-section poi-card">
-          <strong>Territorio</strong>
-          <span>Localidades oficiales desde el geoportal municipal. Ciudades vecinas quedan sólo como mapa base.</span>
-          <div>
+          <strong>Sitios de interes</strong>
+          <IonSelect
+            aria-label="Capas visibles"
+            interface="popover"
+            multiple
+            value={[...poiKinds]}
+            onIonChange={(event) => setPoiKinds(new Set(event.detail.value as PoiKind[]))}
+          >
             {Object.entries(POI_KINDS).map(([kind, meta]) => (
-              <IonChip
-                key={kind}
-                className={poiKinds.has(kind as PoiKind) ? 'selected' : ''}
-                style={{ '--chip-color': meta.color }}
-                onClick={() => togglePoiKind(kind as PoiKind)}
-              >
-                {meta.label}
-              </IonChip>
+              <IonSelectOption key={kind} value={kind}>{meta.label}</IonSelectOption>
             ))}
-          </div>
+          </IonSelect>
         </section>
       )}
 
       {isMobile && sheetView === 'coops' && (
         <>
           <section className="sheet-section filter-section">
-            {searchControls}
+            {searchBar}
+            {categorySegment}
           </section>
 
           <section className="sheet-section list-section">
@@ -786,16 +814,31 @@ export function App() {
                   <IonIcon icon={removeSharp} />
                 </IonButton>
               </div>
-              <div className="map-stats">
-                <IonCard><strong>{COOPS.length}</strong><span>cooperativas</span></IonCard>
-                <IonCard><strong>{POIS.filter((poi) => poi.zone === 'primary').length}</strong><span>puntos</span></IonCard>
-              </div>
               {!isMobile && (
                 <div className="desktop-map-search" aria-label="Buscar cooperativas en el mapa">
                   <div className="desktop-map-search-row">
-                    {searchControls}
+                    {searchBar}
+                    {categorySelect}
                   </div>
-                  <span>{filteredCoops.length} resultados visibles</span>
+                  <div className="desktop-footer-actions">
+                    <span>{filteredCoops.length} resultados visibles</span>
+                    <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" onClick={() => {
+                      navigator.geolocation?.getCurrentPosition((position) => {
+                        mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
+                      });
+                    }}>
+                      <IonIcon icon={locateOutline} />
+                    </IonButton>
+                    <IonButton fill="clear" aria-label="Abrir asistente" title="Abrir asistente" onClick={() => setAssistantOpen(true)}>
+                      <IonIcon icon={sparklesOutline} />
+                    </IonButton>
+                    <IonButton fill="clear" aria-label="Acercar mapa" title="Acercar mapa" onClick={() => mapRef.current?.zoomIn()}>
+                      <IonIcon icon={addSharp} />
+                    </IonButton>
+                    <IonButton fill="clear" aria-label="Alejar mapa" title="Alejar mapa" onClick={() => mapRef.current?.zoomOut()}>
+                      <IonIcon icon={removeSharp} />
+                    </IonButton>
+                  </div>
                 </div>
               )}
             </section>
