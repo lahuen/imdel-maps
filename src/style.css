@@ -191,11 +191,11 @@ ion-content::part(background) {
   bottom: 18px;
   z-index: 660;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) auto;
+  grid-template-columns: minmax(420px, 1fr) auto;
   gap: 10px;
   align-items: center;
-  width: min(860px, calc(100% - 440px));
-  min-width: 560px;
+  width: min(780px, calc(100% - 420px));
+  min-width: 620px;
   padding: 9px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--line);
@@ -207,7 +207,7 @@ ion-content::part(background) {
 
 .desktop-map-search-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 180px;
+  grid-template-columns: minmax(260px, 1fr) 150px;
   gap: 8px;
   align-items: center;
 }
@@ -219,27 +219,20 @@ ion-content::part(background) {
 .desktop-map-search ion-select {
   min-height: 42px;
   padding: 0 12px;
+  overflow: hidden;
   color: var(--ion-color-primary);
   background: rgba(38, 51, 107, 0.06);
   border: 1px solid rgba(38, 51, 107, 0.12);
   border-radius: 16px;
   font-size: 0.78rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .desktop-footer-actions {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.desktop-footer-actions span {
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .desktop-footer-actions ion-button {

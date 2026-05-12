@@ -821,7 +821,6 @@ export function App() {
                     {categorySelect}
                   </div>
                   <div className="desktop-footer-actions">
-                    <span>{filteredCoops.length} resultados visibles</span>
                     <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" onClick={() => {
                       navigator.geolocation?.getCurrentPosition((position) => {
                         mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
