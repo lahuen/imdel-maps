@@ -51,6 +51,14 @@ type RoutePlan = {
   insights: string[];
 };
 
+type AssistantReply = {
+  kind: 'answer' | 'route' | 'clarify';
+  title: string;
+  summary: string;
+  bullets: string[];
+  plan?: RoutePlan;
+};
+
 type SortPoint = { lat: number; lng: number; label: string } | null;
 type SheetView = 'profile' | 'coops' | 'territory';
 
@@ -122,6 +130,87 @@ function buildAssistantInsights(prompt: string): string[] {
     insights.add('Contexto territorial: combinar mapa, cooperativas, puntos de interés, transporte y fuentes oficiales.');
   }
   return [...insights];
+}
+
+function buildAssistantReply(prompt: string): AssistantReply {
+  const q = normalize(prompt);
+  const mentionedCoops = COOPS.filter((coop) => {
+    const haystack = normalize(`${coop.name} ${coop.neighborhood} ${coop.locality} ${coop.products.join(' ')}`);
+    return normalize(coop.name).split(' ').some((word) => word.length > 4 && q.includes(word))
+      || haystack.split(' ').some((word) => word.length > 5 && q.includes(word));
+  });
+  const wantsRoute = q.includes('como llego') || q.includes('como llegar') || q.includes('recorrido') || q.includes('ruta') || q.includes('ir a') || q.includes('desde');
+  const asksCoop = q.includes('cooperativa') || q.includes('coope') || q.includes('perfil') || q.includes('produccion');
+
+  if (q.includes('imdel') || q.includes('instituto')) {
+    return {
+      kind: 'answer',
+      title: 'IMDEL y desarrollo local',
+      summary: 'IMDEL puede funcionar como una referencia institucional para ordenar informacion productiva local, visibilizar cooperativas y conectar programas, territorio y comunidad.',
+      bullets: [
+        'En este POC aparece como punto de entrada para mapear oferta cooperativa y perfiles productivos.',
+        'El valor del mapa esta en cruzar cooperativas, localidades, puntos de interes y recorridos utiles.',
+        'La siguiente etapa deberia sumar fuentes oficiales, roles de administracion y perfiles autogestionados.',
+      ],
+    };
+  }
+
+  if ((wantsRoute || asksCoop) && mentionedCoops.length === 0) {
+    return {
+      kind: 'clarify',
+      title: 'Necesito una referencia del mapa',
+      summary: 'Para una sugerencia mas precisa, elegi una cooperativa o una zona del mapa.',
+      bullets: COOPS.slice(0, 5).map((coop) => `${coop.name} · ${CATEGORIES[coop.category].label} · ${coop.neighborhood}`),
+    };
+  }
+
+  if (asksCoop) {
+    return {
+      kind: 'answer',
+      title: 'Lectura cooperativa del territorio',
+      summary: 'La plataforma puede ayudar a entender que produce cada cooperativa, donde opera, que capacidad tiene y como se conecta con instituciones, comercios y vecinos.',
+      bullets: [
+        'Perfil publico: propuesta de valor, productos, zona, contacto y estado de validacion.',
+        'Gestion interna: carga con roles, cambios enviados a revision y validacion institucional.',
+        'Evolucion posible: marketplace, solicitudes municipales, circuitos de compra local e identidad digital.',
+      ],
+    };
+  }
+
+  if (q.includes('moreno') || q.includes('municipio') || q.includes('localidad') || q.includes('region')) {
+    return {
+      kind: 'answer',
+      title: 'Contexto territorial de Moreno',
+      summary: 'El mapa combina cooperativas con capas de referencia del territorio para que la busqueda no sea solo por nombre, sino tambien por cercania, zona y utilidad comunitaria.',
+      bullets: [
+        'Las localidades y puntos de interes funcionan como referencia no editable.',
+        'Las busquedas deberian priorizar Moreno y sus localidades antes de ampliar a partidos vecinos.',
+        'La integracion con fuentes oficiales sirve para mantener contexto, programas y datos utiles fechados.',
+      ],
+    };
+  }
+
+  if (wantsRoute) {
+    const plan = buildPlan(prompt);
+    return {
+      kind: 'route',
+      title: plan.title,
+      summary: plan.summary,
+      bullets: plan.insights,
+      plan,
+    };
+  }
+
+  return {
+    kind: 'answer',
+    title: 'Asistente territorial',
+    summary: 'Puedo ayudarte a interpretar cooperativas, zonas, puntos de interes, recorridos y oportunidades de servicios digitales sobre el mapa.',
+    bullets: [
+      'Pregunta por una cooperativa, rubro, zona o necesidad productiva.',
+      'Pedi recorridos cuando quieras llegar a un lugar o visitar varias referencias.',
+      'El POC todavia usa datos semilla; la etapa siguiente deberia sumar fuentes oficiales y base administrable.',
+    ],
+  };
 }
 
 function buildPlan(prompt: string): RoutePlan {
@@ -260,15 +349,21 @@ export function App() {
   const [sheetView, setSheetView] = useState<SheetView>('profile');
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [prompt, setPrompt] = useState('');
-  const [plan, setPlan] = useState<RoutePlan | null>(null);
+  const [assistantReply, setAssistantReply] = useState<AssistantReply | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(ASSISTANT_STORAGE_KEY);
       if (!raw) return;
-      const saved = JSON.parse(raw) as { prompt?: string; plan?: RoutePlan };
+      const saved = JSON.parse(raw) as { prompt?: string; reply?: AssistantReply; plan?: RoutePlan };
       setPrompt(saved.prompt ?? '');
-      setPlan(saved.plan ?? null);
+      setAssistantReply(saved.reply ?? (saved.plan ? {
+        kind: 'route',
+        title: saved.plan.title,
+        summary: saved.plan.summary,
+        bullets: saved.plan.insights,
+        plan: saved.plan,
+      } : null));
     } catch {
       localStorage.removeItem(ASSISTANT_STORAGE_KEY);
     }
@@ -397,11 +492,11 @@ export function App() {
     const layer = routeLayerRef.current;
     if (!map || !layer) return;
     layer.clearLayers();
-    if (!plan) return;
-    const points = [plan.origin, ...plan.stops].map((item) => [item.lat, item.lng] as [number, number]);
+    if (!assistantReply?.plan) return;
+    const points = [assistantReply.plan.origin, ...assistantReply.plan.stops].map((item) => [item.lat, item.lng] as [number, number]);
     L.polyline(points, { color: '#26336b', weight: 4, opacity: 0.78, dashArray: '8 9' }).addTo(layer);
     map.fitBounds(L.latLngBounds(points), { padding: [42, 42], maxZoom: 14 });
-  }, [plan]);
+  }, [assistantReply]);
 
   const selectedCoop = COOPS.find((coop) => coop.id === selectedId) ?? filteredCoops[0];
   const searchControls = (
@@ -431,14 +526,13 @@ export function App() {
   function submitPrompt(event: React.FormEvent): void {
     event.preventDefault();
     const nextPrompt = prompt.trim() || 'Como llego a...';
-    const nextPlan = buildPlan(nextPrompt);
-    setPlan(nextPlan);
+    const nextReply = buildAssistantReply(nextPrompt);
+    setAssistantReply(nextReply);
     setCategory('todas');
     setQuery('');
-    setAssistantOpen(false);
     localStorage.setItem(ASSISTANT_STORAGE_KEY, JSON.stringify({
       prompt: nextPrompt,
-      plan: nextPlan,
+      reply: nextReply,
       savedAt: new Date().toISOString(),
     }));
   }
@@ -746,27 +840,31 @@ export function App() {
               <IonItem lines="none">
                 <IonInput value={prompt} placeholder="Ej: Como llego a..." onIonInput={(event) => setPrompt(String(event.detail.value ?? ''))} />
               </IonItem>
-              <IonButton type="submit" expand="block">Planear</IonButton>
+              <IonButton type="submit" expand="block">Enviar</IonButton>
             </form>
-            {plan && (
+            {assistantReply && (
               <IonCard className="route-card">
                 <div className="route-topline">
-                  <strong>{plan.title}</strong>
-                  <span>{plan.distanceKm.toFixed(1)} km estimados</span>
+                  <strong>{assistantReply.title}</strong>
+                  {assistantReply.plan && <span>{assistantReply.plan.distanceKm.toFixed(1)} km estimados</span>}
                 </div>
-                <p>{plan.summary}</p>
-                <ol>
-                  <li>{plan.origin.name}<span>Origen</span></li>
-                  {plan.stops.map((stop) => <li key={stop.id}>{stop.name}<span>{'neighborhood' in stop ? stop.neighborhood : POI_KINDS[stop.kind].label}</span></li>)}
-                </ol>
-                <div className="cost-grid">
-                  <div><span>Colectivo/tren</span><strong>{plan.lowCost}</strong></div>
-                  <div><span>App viaje</span><strong>{plan.rideHail}</strong></div>
-                </div>
+                <p>{assistantReply.summary}</p>
+                {assistantReply.plan && (
+                  <>
+                    <ol>
+                      <li>{assistantReply.plan.origin.name}<span>Origen</span></li>
+                      {assistantReply.plan.stops.map((stop) => <li key={stop.id}>{stop.name}<span>{'neighborhood' in stop ? stop.neighborhood : POI_KINDS[stop.kind].label}</span></li>)}
+                    </ol>
+                    <div className="cost-grid">
+                      <div><span>Colectivo/tren</span><strong>{assistantReply.plan.lowCost}</strong></div>
+                      <div><span>App viaje</span><strong>{assistantReply.plan.rideHail}</strong></div>
+                    </div>
+                  </>
+                )}
                 <div className="insight-list">
-                  {plan.insights.map((insight) => <p key={insight}>{insight}</p>)}
+                  {assistantReply.bullets.map((insight) => <p key={insight}>{insight}</p>)}
                 </div>
-                <IonButton expand="block" href={mapsUrl(plan)} target="_blank">Abrir recorrido real</IonButton>
+                {assistantReply.plan && <IonButton expand="block" href={mapsUrl(assistantReply.plan)} target="_blank">Abrir recorrido real</IonButton>}
               </IonCard>
             )}
           </IonContent>
