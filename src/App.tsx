@@ -489,23 +489,6 @@ export function App() {
                 <p className="territory-copy">{APP_CONFIG.territoryDescription}</p>
               </section>
 
-              <section className="sheet-section poi-card">
-                <strong>Territorio</strong>
-                <span>Localidades oficiales desde el geoportal municipal. Ciudades vecinas quedan sólo como mapa base.</span>
-                <div>
-                  {Object.entries(POI_KINDS).map(([kind, meta]) => (
-                    <IonChip
-                      key={kind}
-                      className={poiKinds.has(kind as PoiKind) ? 'selected' : ''}
-                      style={{ '--chip-color': meta.color }}
-                      onClick={() => togglePoiKind(kind as PoiKind)}
-                    >
-                      {meta.label}
-                    </IonChip>
-                  ))}
-                </div>
-              </section>
-
               {selectedCoop && (
                 <section className="sheet-section place-card">
                   <div className="place-topline">
@@ -537,6 +520,23 @@ export function App() {
                   </div>
                 </section>
               )}
+
+              <section className="sheet-section poi-card">
+                <strong>Territorio</strong>
+                <span>Localidades oficiales desde el geoportal municipal. Ciudades vecinas quedan sólo como mapa base.</span>
+                <div>
+                  {Object.entries(POI_KINDS).map(([kind, meta]) => (
+                    <IonChip
+                      key={kind}
+                      className={poiKinds.has(kind as PoiKind) ? 'selected' : ''}
+                      style={{ '--chip-color': meta.color }}
+                      onClick={() => togglePoiKind(kind as PoiKind)}
+                    >
+                      {meta.label}
+                    </IonChip>
+                  ))}
+                </div>
+              </section>
 
               <section className="sheet-section filter-section">
                 <IonSearchbar

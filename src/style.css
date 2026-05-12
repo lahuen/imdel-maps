@@ -845,9 +845,9 @@ ion-segment-button {
     left: 0;
     right: 0;
     bottom: 0;
-    height: min(46dvh, 430px);
-    gap: 10px;
-    padding: 14px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    height: min(232px, 32dvh);
+    gap: 9px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     border: 1px solid var(--line);
     border-bottom: 0;
     border-radius: 24px 24px 0 0;
@@ -857,6 +857,13 @@ ion-segment-button {
 
   .browse-sheet.expanded {
     height: min(74dvh, 660px);
+  }
+
+  .browse-sheet:not(.expanded) .intro-section,
+  .browse-sheet:not(.expanded) .poi-card,
+  .browse-sheet:not(.expanded) .filter-section,
+  .browse-sheet:not(.expanded) .list-section {
+    display: none;
   }
 
   .sheet-title h1 {
@@ -880,6 +887,7 @@ ion-segment-button {
 
   .place-card {
     gap: 8px;
+    flex: 0 0 auto;
   }
 
   .place-topline h2 {
@@ -889,7 +897,7 @@ ion-segment-button {
   .place-card > p {
     display: -webkit-box;
     overflow: hidden;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
   }
 
@@ -923,7 +931,7 @@ ion-segment-button {
   .map-stats {
     left: 12px;
     right: auto;
-    bottom: calc(min(46dvh, 430px) + 14px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(232px, 32dvh) + 14px + env(safe-area-inset-bottom, 0px));
     gap: 7px;
     overflow-x: auto;
   }
@@ -949,7 +957,7 @@ ion-segment-button {
 
   .map-tools {
     right: 12px;
-    bottom: calc(min(46dvh, 430px) + 14px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(232px, 32dvh) + 14px + env(safe-area-inset-bottom, 0px));
     grid-auto-flow: column;
     grid-template-columns: repeat(4, 42px);
     min-height: 56px;
@@ -966,7 +974,7 @@ ion-segment-button {
 
 @media (max-width: 380px) {
   .browse-sheet {
-    height: min(48dvh, 460px);
+    height: min(222px, 34dvh);
   }
 
   .browse-sheet.expanded {
@@ -974,11 +982,11 @@ ion-segment-button {
   }
 
   .map-stats {
-    bottom: calc(min(48dvh, 460px) + 12px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(222px, 34dvh) + 12px + env(safe-area-inset-bottom, 0px));
   }
 
   .map-tools {
-    bottom: calc(min(48dvh, 460px) + 12px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(min(222px, 34dvh) + 12px + env(safe-area-inset-bottom, 0px));
   }
 
   .sheet-title h1 {
