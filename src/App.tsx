@@ -78,7 +78,7 @@ function money(value: number): string {
 }
 
 function mapsTarget(place: Coop | Poi): string {
-  return encodeURIComponent(place.mapsQuery ?? `${place.lat},${place.lng}`);
+  return encodeURIComponent('address' in place && place.address ? place.address : `${place.lat},${place.lng}`);
 }
 
 const COOP_MARKER_ICONS: Record<Category, string> = {
@@ -254,6 +254,7 @@ export function App() {
   const [poiKinds, setPoiKinds] = useState<Set<PoiKind>>(new Set(DEFAULT_POI_KINDS));
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [sheetView, setSheetView] = useState<SheetView>('profile');
@@ -482,6 +483,10 @@ export function App() {
     void sheetModalRef.current?.setCurrentBreakpoint(breakpoint);
   }
 
+  function openProfile(): void {
+    setProfileOpen(true);
+  }
+
   const browsePanel = (
     <div className={sheetExpanded ? 'browse-sheet expanded' : 'browse-sheet'} aria-label="Explorar cooperativas">
       <div className="sheet-title">
@@ -524,7 +529,7 @@ export function App() {
               <IonIcon icon={navigateOutline} slot="start" />
               Cómo llegar
             </IonButton>
-            <IonButton size="small" shape="round" fill="outline" className="details-action" onClick={() => openSheetView('profile')}>
+            <IonButton size="small" shape="round" fill="outline" className="details-action" onClick={openProfile}>
               <IonIcon icon={informationCircleOutline} slot="start" />
               Perfil
             </IonButton>
@@ -574,6 +579,9 @@ export function App() {
           <div className="tag-row">
             {selectedCoop.products.map((product) => <IonChip key={product}>{product}</IonChip>)}
           </div>
+          <IonButton fill="solid" expand="block" onClick={openProfile}>
+            Abrir perfil completo
+          </IonButton>
           {isMobile && (
             <IonButton fill="outline" expand="block" onClick={() => openSheetView('coops', 0.92)}>
               <IonIcon icon={mapOutline} slot="start" />
@@ -760,6 +768,63 @@ export function App() {
                 </div>
                 <IonButton expand="block" href={mapsUrl(plan)} target="_blank">Abrir recorrido real</IonButton>
               </IonCard>
+            )}
+          </IonContent>
+        </IonModal>
+
+        <IonModal className="profile-modal" isOpen={profileOpen} onDidDismiss={() => setProfileOpen(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonLabel className="modal-title">Perfil cooperativo</IonLabel>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setProfileOpen(false)}>
+                  <IonIcon icon={closeOutline} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="profile-content">
+            {selectedCoop && (
+              <article className="profile-screen">
+                <header className="profile-hero">
+                  <span className="category-dot" style={{ background: CATEGORIES[selectedCoop.category].color }} />
+                  <div>
+                    <p>{CATEGORIES[selectedCoop.category].label} · {selectedCoop.neighborhood}</p>
+                    <h2>{selectedCoop.name}</h2>
+                    <span>{selectedCoop.verified ? 'Perfil verificado' : 'Perfil a validar'}</span>
+                  </div>
+                </header>
+                <section>
+                  <h3>Propuesta de valor</h3>
+                  <p>{selectedCoop.value}</p>
+                </section>
+                <section className="profile-grid">
+                  <div><span>Rubro</span><strong>{CATEGORIES[selectedCoop.category].label}</strong></div>
+                  <div><span>Zona</span><strong>{selectedCoop.neighborhood}</strong></div>
+                  <div><span>Localidad</span><strong>{selectedCoop.locality}</strong></div>
+                  <div><span>Contacto</span><strong>{selectedCoop.contact ?? 'A completar'}</strong></div>
+                </section>
+                <section>
+                  <h3>Oferta y capacidades</h3>
+                  <div className="tag-row">
+                    {selectedCoop.products.map((product) => <IonChip key={product}>{product}</IonChip>)}
+                  </div>
+                </section>
+                <div className="profile-actions">
+                  <IonButton shape="round" href={`https://www.google.com/maps/search/?api=1&query=${mapsTarget(selectedCoop)}`} target="_blank">
+                    <IonIcon icon={navigateOutline} slot="start" />
+                    Cómo llegar
+                  </IonButton>
+                  <IonButton shape="round" fill="outline" onClick={() => toggleFavorite(selectedCoop.id)}>
+                    <IonIcon icon={favoriteIds.has(selectedCoop.id) ? heart : heartOutline} slot="start" />
+                    Guardar
+                  </IonButton>
+                  <IonButton shape="round" fill="outline" onClick={() => void shareCoop(selectedCoop)}>
+                    <IonIcon icon={shareOutline} slot="start" />
+                    Compartir
+                  </IonButton>
+                </div>
+              </article>
             )}
           </IonContent>
         </IonModal>
