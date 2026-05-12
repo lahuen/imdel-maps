@@ -224,6 +224,7 @@ export function App() {
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const selectedMarkerRef = useRef<L.CircleMarker | null>(null);
+  const sheetModalRef = useRef<HTMLIonModalElement>(null);
 
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category | 'todas'>('todas');
@@ -232,6 +233,7 @@ export function App() {
   const [poiKinds, setPoiKinds] = useState<Set<PoiKind>>(new Set(DEFAULT_POI_KINDS));
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [prompt, setPrompt] = useState('');
@@ -247,6 +249,14 @@ export function App() {
     } catch {
       localStorage.removeItem(ASSISTANT_STORAGE_KEY);
     }
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 780px)');
+    const sync = () => setIsMobile(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
   }, []);
 
   useEffect(() => {
@@ -416,6 +426,145 @@ export function App() {
     await navigator.clipboard?.writeText(shareUrl);
   }
 
+  function toggleSheet(): void {
+    const nextExpanded = !sheetExpanded;
+    setSheetExpanded(nextExpanded);
+    void sheetModalRef.current?.setCurrentBreakpoint(nextExpanded ? 0.92 : 0.24);
+  }
+
+  const browsePanel = (
+    <div className={sheetExpanded ? 'browse-sheet expanded' : 'browse-sheet'} aria-label="Explorar cooperativas">
+      <div className="sheet-title">
+        <div>
+          <p>Red productiva local</p>
+          <h1>{APP_CONFIG.panelTitle}</h1>
+          {sortPoint && <small className="sort-chip">Ordenado por cercanía</small>}
+        </div>
+        <div className="sheet-actions">
+          <IonBadge>{filteredCoops.length} visibles</IonBadge>
+          {isMobile && (
+            <IonButton
+              fill="clear"
+              aria-label={sheetExpanded ? 'Contraer listado' : 'Expandir listado'}
+              title={sheetExpanded ? 'Contraer listado' : 'Expandir listado'}
+              onClick={toggleSheet}
+            >
+              <IonIcon icon={sheetExpanded ? chevronDownOutline : chevronUpOutline} />
+            </IonButton>
+          )}
+        </div>
+      </div>
+
+      <section className="sheet-section intro-section">
+        <p className="territory-copy">{APP_CONFIG.territoryDescription}</p>
+      </section>
+
+      {selectedCoop && (
+        <section className="sheet-section place-card">
+          <div className="place-topline">
+            <span className="category-dot" style={{ background: CATEGORIES[selectedCoop.category].color }} />
+            <div>
+              <p>{CATEGORIES[selectedCoop.category].label} · {selectedCoop.neighborhood}</p>
+              <h2>{selectedCoop.name}</h2>
+            </div>
+          </div>
+          <p>{selectedCoop.value}</p>
+          <div className="place-actions">
+            <IonButton size="small" shape="round" href={`https://www.google.com/maps/search/?api=1&query=${mapsTarget(selectedCoop)}`} target="_blank">
+              <IonIcon icon={navigateOutline} slot="start" />
+              Cómo llegar
+            </IonButton>
+            <IonButton
+              size="small"
+              shape="round"
+              fill="outline"
+              aria-label={favoriteIds.has(selectedCoop.id) ? 'Quitar de guardadas' : 'Guardar cooperativa'}
+              title={favoriteIds.has(selectedCoop.id) ? 'Quitar de guardadas' : 'Guardar cooperativa'}
+              onClick={() => toggleFavorite(selectedCoop.id)}
+            >
+              <IonIcon icon={favoriteIds.has(selectedCoop.id) ? heart : heartOutline} />
+            </IonButton>
+            <IonButton size="small" shape="round" fill="outline" aria-label="Compartir cooperativa" title="Compartir cooperativa" onClick={() => void shareCoop(selectedCoop)}>
+              <IonIcon icon={shareOutline} />
+            </IonButton>
+          </div>
+        </section>
+      )}
+
+      <section className="sheet-section poi-card">
+        <strong>Territorio</strong>
+        <span>Localidades oficiales desde el geoportal municipal. Ciudades vecinas quedan sólo como mapa base.</span>
+        <div>
+          {Object.entries(POI_KINDS).map(([kind, meta]) => (
+            <IonChip
+              key={kind}
+              className={poiKinds.has(kind as PoiKind) ? 'selected' : ''}
+              style={{ '--chip-color': meta.color }}
+              onClick={() => togglePoiKind(kind as PoiKind)}
+            >
+              {meta.label}
+            </IonChip>
+          ))}
+        </div>
+      </section>
+
+      <section className="sheet-section filter-section">
+        <IonSearchbar
+          value={query}
+          placeholder="Buscar producto, barrio o nombre"
+          debounce={120}
+          onIonInput={(event) => setQuery(event.detail.value ?? '')}
+        />
+
+        <IonSegment value={category} scrollable onIonChange={(event) => setCategory(event.detail.value as Category | 'todas')}>
+          <IonSegmentButton value="todas">Todas</IonSegmentButton>
+          {Object.entries(CATEGORIES).map(([key, meta]) => (
+            <IonSegmentButton key={key} value={key}>{meta.label}</IonSegmentButton>
+          ))}
+        </IonSegment>
+      </section>
+
+      <section className="sheet-section list-section">
+        <div className="section-row">
+          <strong>Cooperativas</strong>
+          <span>{filteredCoops.length} resultados</span>
+        </div>
+        <div className="coop-list">
+          {filteredCoops.map((coop) => {
+            const meta = CATEGORIES[coop.category];
+            return (
+              <IonCard
+                button
+                key={coop.id}
+                className={coop.id === selectedCoop?.id ? 'coop-card selected' : 'coop-card'}
+                onClick={() => focusCoop(coop)}
+              >
+                <div className="coop-head">
+                  <span className="category-dot" style={{ background: meta.color }} />
+                  <div>
+                    <p>{meta.label} · {coop.neighborhood}</p>
+                    <h2>{coop.name}</h2>
+                  </div>
+                </div>
+                <p className="coop-value">{coop.value}</p>
+                <div className="tag-row">
+                  {coop.products.map((product) => <IonChip key={product}>{product}</IonChip>)}
+                </div>
+                <div className="card-actions">
+                  <IonButton size="small" shape="round" href={`https://www.google.com/maps/search/?api=1&query=${mapsTarget(coop)}`} target="_blank">
+                    <IonIcon icon={navigateOutline} slot="start" />
+                    Cómo llegar
+                  </IonButton>
+                  <IonBadge color={coop.verified ? 'success' : 'warning'}>{coop.verified ? 'Verificada' : 'A validar'}</IonBadge>
+                </div>
+              </IonCard>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+
   return (
     <IonApp>
       <IonPage>
@@ -465,137 +614,29 @@ export function App() {
               </div>
             </section>
 
-            <aside className={sheetExpanded ? 'browse-sheet expanded' : 'browse-sheet'} aria-label="Explorar cooperativas">
-              <div className="sheet-title">
-                <div>
-                  <p>Red productiva local</p>
-                  <h1>{APP_CONFIG.panelTitle}</h1>
-                  {sortPoint && <small className="sort-chip">Ordenado por cercanía</small>}
-                </div>
-                <div className="sheet-actions">
-                  <IonBadge>{filteredCoops.length} visibles</IonBadge>
-                  <IonButton
-                    fill="clear"
-                    aria-label={sheetExpanded ? 'Contraer listado' : 'Expandir listado'}
-                    title={sheetExpanded ? 'Contraer listado' : 'Expandir listado'}
-                    onClick={() => setSheetExpanded((value) => !value)}
-                  >
-                    <IonIcon icon={sheetExpanded ? chevronDownOutline : chevronUpOutline} />
-                  </IonButton>
-                </div>
-              </div>
-
-              <section className="sheet-section intro-section">
-                <p className="territory-copy">{APP_CONFIG.territoryDescription}</p>
-              </section>
-
-              {selectedCoop && (
-                <section className="sheet-section place-card">
-                  <div className="place-topline">
-                    <span className="category-dot" style={{ background: CATEGORIES[selectedCoop.category].color }} />
-                    <div>
-                      <p>{CATEGORIES[selectedCoop.category].label} · {selectedCoop.neighborhood}</p>
-                      <h2>{selectedCoop.name}</h2>
-                    </div>
-                  </div>
-                  <p>{selectedCoop.value}</p>
-                  <div className="place-actions">
-                    <IonButton size="small" shape="round" href={`https://www.google.com/maps/search/?api=1&query=${mapsTarget(selectedCoop)}`} target="_blank">
-                      <IonIcon icon={navigateOutline} slot="start" />
-                      Cómo llegar
-                    </IonButton>
-                    <IonButton
-                      size="small"
-                      shape="round"
-                      fill="outline"
-                      aria-label={favoriteIds.has(selectedCoop.id) ? 'Quitar de guardadas' : 'Guardar cooperativa'}
-                      title={favoriteIds.has(selectedCoop.id) ? 'Quitar de guardadas' : 'Guardar cooperativa'}
-                      onClick={() => toggleFavorite(selectedCoop.id)}
-                    >
-                      <IonIcon icon={favoriteIds.has(selectedCoop.id) ? heart : heartOutline} />
-                    </IonButton>
-                    <IonButton size="small" shape="round" fill="outline" aria-label="Compartir cooperativa" title="Compartir cooperativa" onClick={() => void shareCoop(selectedCoop)}>
-                      <IonIcon icon={shareOutline} />
-                    </IonButton>
-                  </div>
-                </section>
-              )}
-
-              <section className="sheet-section poi-card">
-                <strong>Territorio</strong>
-                <span>Localidades oficiales desde el geoportal municipal. Ciudades vecinas quedan sólo como mapa base.</span>
-                <div>
-                  {Object.entries(POI_KINDS).map(([kind, meta]) => (
-                    <IonChip
-                      key={kind}
-                      className={poiKinds.has(kind as PoiKind) ? 'selected' : ''}
-                      style={{ '--chip-color': meta.color }}
-                      onClick={() => togglePoiKind(kind as PoiKind)}
-                    >
-                      {meta.label}
-                    </IonChip>
-                  ))}
-                </div>
-              </section>
-
-              <section className="sheet-section filter-section">
-                <IonSearchbar
-                  value={query}
-                  placeholder="Buscar producto, barrio o nombre"
-                  debounce={120}
-                  onIonInput={(event) => setQuery(event.detail.value ?? '')}
-                />
-
-                <IonSegment value={category} scrollable onIonChange={(event) => setCategory(event.detail.value as Category | 'todas')}>
-                  <IonSegmentButton value="todas">Todas</IonSegmentButton>
-                  {Object.entries(CATEGORIES).map(([key, meta]) => (
-                    <IonSegmentButton key={key} value={key}>{meta.label}</IonSegmentButton>
-                  ))}
-                </IonSegment>
-              </section>
-
-              <section className="sheet-section list-section">
-                <div className="section-row">
-                  <strong>Cooperativas</strong>
-                  <span>{filteredCoops.length} resultados</span>
-                </div>
-                <div className="coop-list">
-                  {filteredCoops.map((coop) => {
-                    const meta = CATEGORIES[coop.category];
-                    return (
-                      <IonCard
-                        button
-                        key={coop.id}
-                        className={coop.id === selectedCoop?.id ? 'coop-card selected' : 'coop-card'}
-                        onClick={() => focusCoop(coop)}
-                      >
-                        <div className="coop-head">
-                          <span className="category-dot" style={{ background: meta.color }} />
-                          <div>
-                            <p>{meta.label} · {coop.neighborhood}</p>
-                            <h2>{coop.name}</h2>
-                          </div>
-                        </div>
-                        <p className="coop-value">{coop.value}</p>
-                        <div className="tag-row">
-                          {coop.products.map((product) => <IonChip key={product}>{product}</IonChip>)}
-                        </div>
-                        <div className="card-actions">
-                          <IonButton size="small" shape="round" href={`https://www.google.com/maps/search/?api=1&query=${mapsTarget(coop)}`} target="_blank">
-                            <IonIcon icon={navigateOutline} slot="start" />
-                            Cómo llegar
-                          </IonButton>
-                          <IonBadge color={coop.verified ? 'success' : 'warning'}>{coop.verified ? 'Verificada' : 'A validar'}</IonBadge>
-                        </div>
-                      </IonCard>
-                    );
-                  })}
-                </div>
-              </section>
-            </aside>
+            {!isMobile && <aside className="desktop-panel">{browsePanel}</aside>}
 
           </main>
         </IonContent>
+
+        {isMobile && (
+          <IonModal
+            ref={sheetModalRef}
+            className="map-sheet-modal"
+            isOpen
+            canDismiss={false}
+            backdropDismiss={false}
+            breakpoints={[0.24, 0.55, 0.92]}
+            initialBreakpoint={0.24}
+            backdropBreakpoint={0.92}
+            handle
+            onIonBreakpointDidChange={(event) => setSheetExpanded(event.detail.breakpoint >= 0.55)}
+          >
+            <IonContent className="sheet-modal-content" scrollY>
+              {browsePanel}
+            </IonContent>
+          </IonModal>
+        )}
 
         <IonModal className="app-modal assistant-modal" isOpen={assistantOpen} onDidDismiss={() => setAssistantOpen(false)}>
           <IonHeader>
