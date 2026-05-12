@@ -1,18 +1,22 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   build: {
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: {
+          ionic: ['@ionic/react', '@ionic/core', 'ionicons'],
           leaflet: ['leaflet', 'leaflet.markercluster'],
         },
       },
     },
   },
   plugins: [
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
