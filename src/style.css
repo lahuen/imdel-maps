@@ -796,32 +796,57 @@ ion-segment-button {
   color: var(--text);
 }
 
-.marker-pin {
-  width: 38px;
-  height: 46px;
+.coop-marker {
+  position: relative;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   color: #ffffff;
-  background: var(--pin);
-  border: 4px solid rgba(255, 255, 255, 0.82);
-  border-radius: 19px 19px 19px 5px;
-  box-shadow: 0 10px 22px rgba(38, 51, 107, 0.2);
+  background: color-mix(in srgb, var(--pin) 86%, #26336b);
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  border-radius: 16px 16px 16px 5px;
+  box-shadow: 0 10px 24px rgba(38, 51, 107, 0.22);
   transform: rotate(45deg);
 }
 
-.marker-pin span {
-  transform: rotate(-45deg);
-  font-size: 0.82rem;
-  font-weight: 800;
+.coop-marker::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border: 2px solid rgba(38, 51, 107, 0.18);
+  border-radius: 50%;
 }
 
-.poi-pin {
-  width: 18px;
-  height: 18px;
-  background: #ffffff;
-  border: 5px solid var(--poi);
+.coop-marker.pending::after {
+  background: var(--ion-color-warning);
+}
+
+.coop-marker svg {
+  width: 21px;
+  height: 21px;
+  transform: rotate(-45deg);
+}
+
+.poi-marker {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--poi) 70%, #26336b);
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid color-mix(in srgb, var(--poi) 54%, #ffffff);
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88), 0 8px 18px rgba(38, 51, 107, 0.18);
+  box-shadow: 0 8px 20px rgba(38, 51, 107, 0.14);
+}
+
+.poi-marker svg {
+  width: 17px;
+  height: 17px;
 }
 
 .leaflet-tooltip {

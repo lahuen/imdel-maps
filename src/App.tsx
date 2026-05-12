@@ -81,6 +81,24 @@ function mapsTarget(place: Coop | Poi): string {
   return encodeURIComponent(place.mapsQuery ?? `${place.lat},${place.lng}`);
 }
 
+const COOP_MARKER_ICONS: Record<Category, string> = {
+  agro: '<path d="M7 19c7.5-.6 11-5.1 11-13-7.1.4-12 4.5-12 11v2Z"/><path d="M7 19c2.2-4.1 5.2-7.2 9.2-9.2"/>',
+  alimentos: '<path d="M7 8h10l-1 11H8L7 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M10 13h4"/>',
+  textil: '<path d="m8 5 4 2 4-2 3 4-3 2v8H8v-8L5 9l3-4Z"/><path d="M10 6c.4 1.2 1.1 2 2 2s1.6-.8 2-2"/>',
+  servicios: '<path d="M14.7 6.3a4 4 0 0 0-5.2 5.2l-4.2 4.2a2 2 0 1 0 2.8 2.8l4.2-4.2a4 4 0 0 0 5.2-5.2l-2.8 2.8-2.1-2.1 2.1-3.5Z"/>',
+  construccion: '<path d="M5 14h14"/><path d="M7 14a5 5 0 0 1 10 0"/><path d="M9 14V9"/><path d="M15 14V9"/><path d="M6 17h12"/>',
+};
+
+const POI_MARKER_ICONS: Record<PoiKind, string> = {
+  localidad: '<path d="M12 21s6-4.4 6-10a6 6 0 1 0-12 0c0 5.6 6 10 6 10Z"/><circle cx="12" cy="11" r="2"/>',
+  equipamiento: '<path d="M5 20h14"/><path d="M7 20V8l5-3 5 3v12"/><path d="M10 20v-5h4v5"/><path d="M10 10h.01M14 10h.01"/>',
+  educacion: '<path d="M4 10 12 6l8 4-8 4-8-4Z"/><path d="M7 12v4c2.8 1.8 7.2 1.8 10 0v-4"/><path d="M20 10v5"/>',
+};
+
+function markerSvg(paths: string): string {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
 function buildAssistantInsights(prompt: string): string[] {
   const q = normalize(prompt);
   const insights = new Set<string>();
@@ -198,9 +216,9 @@ function makeIcon(coop: Coop): L.DivIcon {
   const meta = CATEGORIES[coop.category];
   return L.divIcon({
     className: '',
-    html: `<div class="marker-pin" style="--pin:${meta.color}"><span>${coop.name.slice(0, 1)}</span></div>`,
-    iconSize: [38, 46],
-    iconAnchor: [19, 44],
+    html: `<div class="coop-marker ${coop.verified ? 'verified' : 'pending'}" style="--pin:${meta.color}">${markerSvg(COOP_MARKER_ICONS[coop.category])}</div>`,
+    iconSize: [42, 48],
+    iconAnchor: [21, 44],
   });
 }
 
@@ -208,9 +226,9 @@ function makePoiIcon(poi: Poi): L.DivIcon {
   const meta = POI_KINDS[poi.kind];
   return L.divIcon({
     className: '',
-    html: `<div class="poi-pin" style="--poi:${meta.color}"></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    html: `<div class="poi-marker" style="--poi:${meta.color}">${markerSvg(POI_MARKER_ICONS[poi.kind])}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   });
 }
 
