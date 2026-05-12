@@ -802,6 +802,15 @@ ion-segment-button {
     max-height: calc(90vh - 56px);
   }
 
+  .assistant-modal {
+    --height: min(78vh, 620px);
+    --max-height: min(78vh, 620px);
+  }
+
+  .assistant-modal .assistant-content {
+    max-height: calc(min(78vh, 620px) - 56px);
+  }
+
   .app-header ion-toolbar {
     --min-height: 64px;
     --padding-start: 12px;
