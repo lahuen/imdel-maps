@@ -90,11 +90,18 @@ ion-content::part(background) {
   font-weight: 800;
 }
 
-.desktop-only {
+.desktop-only,
+.header-action {
   --background: var(--ion-color-primary);
   --background-hover: #1f2a5c;
   --color: #ffffff;
   font-weight: 800;
+}
+
+.header-action[fill="outline"] {
+  --background: rgba(255, 255, 255, 0.72);
+  --color: var(--ion-color-primary);
+  --border-color: rgba(38, 51, 107, 0.2);
 }
 
 .product-shell {
@@ -114,6 +121,198 @@ ion-content::part(background) {
 .desktop-panel {
   min-width: 0;
   min-height: 0;
+}
+
+.workspace-screen {
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 22px 42px;
+}
+
+.workspace-hero,
+.access-card,
+.workspace-card,
+.workspace-table {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 18px 46px rgba(38, 51, 107, 0.08);
+}
+
+.workspace-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px;
+}
+
+.workspace-hero h1,
+.access-card h1,
+.access-card h2,
+.workspace-card h2 {
+  margin: 0;
+  color: var(--text);
+}
+
+.workspace-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 0.98;
+}
+
+.workspace-hero p:not(.eyebrow),
+.access-card p,
+.workspace-card p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.user-pill {
+  display: grid;
+  gap: 4px;
+  min-width: 220px;
+  padding: 12px 14px;
+  color: var(--ion-color-primary);
+  background: rgba(38, 51, 107, 0.06);
+  border: 1px solid rgba(38, 51, 107, 0.12);
+  border-radius: 16px;
+}
+
+.user-pill span,
+.user-pill strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-pill span {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.user-pill strong {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.access-card {
+  display: grid;
+  gap: 14px;
+  max-width: 620px;
+  padding: 22px;
+}
+
+.access-card ion-button,
+.workspace-actions ion-button,
+.workspace-card ion-button {
+  margin: 0;
+  font-weight: 800;
+}
+
+.access-card ion-button {
+  --background: var(--ion-color-primary);
+  --color: #ffffff;
+}
+
+.access-warning {
+  padding: 12px 14px;
+  color: #5b3c00;
+  background: rgba(234, 210, 140, 0.28);
+  border: 1px solid rgba(129, 95, 18, 0.18);
+  border-radius: 16px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.workspace-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 18px;
+}
+
+.workspace-card ion-icon {
+  width: 22px;
+  height: 22px;
+  padding: 10px;
+  color: var(--ion-color-primary);
+  background: rgba(38, 51, 107, 0.06);
+  border-radius: 16px;
+}
+
+.workspace-card h2 {
+  font-size: 1.05rem;
+}
+
+.workspace-card p {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.workspace-table {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-align: left;
+  font: inherit;
+}
+
+.review-row strong,
+.review-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-row strong {
+  color: var(--text);
+}
+
+.review-row small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.workspace-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 0 0;
+  background: linear-gradient(to top, var(--paper) 70%, rgba(247, 245, 239, 0));
 }
 
 .leaflet-host {
@@ -1186,6 +1385,55 @@ ion-segment-button {
 
   .desktop-only {
     display: none;
+  }
+
+  .header-action {
+    min-height: 38px;
+    margin: 0;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    font-size: 0.76rem;
+  }
+
+  .header-action ion-icon {
+    display: none;
+  }
+
+  .workspace-screen {
+    gap: 14px;
+    padding: 16px 14px 30px;
+  }
+
+  .workspace-hero {
+    display: grid;
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .workspace-hero h1 {
+    font-size: 2rem;
+  }
+
+  .user-pill {
+    min-width: 0;
+  }
+
+  .access-card {
+    max-width: none;
+    padding: 18px;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .review-row ion-badge {
+    grid-column: 2;
+    width: max-content;
   }
 
   .desktop-map-search {

@@ -13,4 +13,14 @@ export const APP_CONFIG = {
   aiProviderLabel: import.meta.env.VITE_AI_PROVIDER_LABEL || 'Gemini',
   featuredCoopKeyword: import.meta.env.VITE_FEATURED_COOP_KEYWORD || 'semilla',
   featuredCoopLabel: import.meta.env.VITE_FEATURED_COOP_LABEL || 'Cooperativa Semilla',
+  firebase: {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  },
+  roleEmails: {
+    admin: String(import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((email: string) => email.trim().toLowerCase()).filter(Boolean),
+    maintainer: String(import.meta.env.VITE_MAINTAINER_EMAILS || '').split(',').map((email: string) => email.trim().toLowerCase()).filter(Boolean),
+  },
 };

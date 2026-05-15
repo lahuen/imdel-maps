@@ -27,19 +27,25 @@ import {
   chevronDownOutline,
   chevronUpOutline,
   closeOutline,
+  documentTextOutline,
   heart,
   heartOutline,
   informationCircleOutline,
+  logOutOutline,
   locateOutline,
   mapOutline,
   removeSharp,
   navigateOutline,
+  peopleOutline,
+  personCircleOutline,
   shareOutline,
   sparklesOutline,
 } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet.markercluster';
+import type { User } from 'firebase/auth';
 import { APP_CONFIG } from './config';
+import { isFirebaseConfigured, roleForEmail, signInWithGoogle, signOutUser, subscribeAuth, type UserRole } from './auth';
 import { CATEGORIES, COOPS, POI_KINDS, POIS, type Category, type Coop, type Poi, type PoiKind } from './data/seed';
 
 type RoutePlan = {
@@ -63,6 +69,7 @@ type AssistantReply = {
 
 type SortPoint = { lat: number; lng: number; label: string } | null;
 type SheetView = 'profile' | 'coops' | 'territory';
+type AppView = 'map' | 'admin' | 'sandbox';
 
 const ASSISTANT_STORAGE_KEY = `${APP_CONFIG.appName.toLowerCase().replace(/\W+/g, '-')}-assistant-v2`;
 const FAVORITES_STORAGE_KEY = `${APP_CONFIG.appName.toLowerCase().replace(/\W+/g, '-')}-favorites-v1`;
@@ -344,7 +351,6 @@ export function App() {
   const [sortPoint, setSortPoint] = useState<SortPoint>(null);
   const [poiKinds, setPoiKinds] = useState<Set<PoiKind>>(new Set(DEFAULT_POI_KINDS));
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -352,6 +358,10 @@ export function App() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [prompt, setPrompt] = useState('');
   const [assistantReply, setAssistantReply] = useState<AssistantReply | null>(null);
+  const [appView, setAppView] = useState<AppView>('map');
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   useEffect(() => {
     try {
@@ -393,10 +403,21 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const syncHash = () => setAdminOpen(window.location.hash === '#admin');
+    const syncHash = () => {
+      const nextHash = window.location.hash.replace('#', '');
+      setAppView(nextHash === 'admin' || nextHash === 'sandbox' ? nextHash : 'map');
+    };
     syncHash();
     window.addEventListener('hashchange', syncHash);
     return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuth((user) => {
+      setAuthUser(user);
+      setAuthReady(true);
+    });
+    return unsubscribe;
   }, []);
 
   const filteredCoops = useMemo(() => {
@@ -417,6 +438,15 @@ export function App() {
   }, [filteredCoops, selectedId]);
 
   useEffect(() => {
+    if (appView !== 'map') {
+      mapRef.current?.remove();
+      mapRef.current = null;
+      coopLayerRef.current = null;
+      poiLayerRef.current = null;
+      routeLayerRef.current = null;
+      selectedMarkerRef.current = null;
+      return;
+    }
     if (!mapNode.current || mapRef.current) return;
     const map = L.map(mapNode.current, {
       center: [-34.625, -58.805],
@@ -449,7 +479,7 @@ export function App() {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [appView]);
 
   useEffect(() => {
     const layer = coopLayerRef.current;
@@ -585,6 +615,28 @@ export function App() {
   function openProfile(): void {
     setProfileOpen(true);
   }
+
+  function goToView(view: AppView): void {
+    window.location.hash = view === 'map' ? '' : view;
+    setAppView(view);
+  }
+
+  async function handleGoogleSignIn(): Promise<void> {
+    setAuthError('');
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'No se pudo iniciar sesion con Google.');
+    }
+  }
+
+  async function handleSignOut(): Promise<void> {
+    setAuthError('');
+    await signOutUser();
+  }
+
+  const userRole: UserRole = roleForEmail(authUser?.email);
+  const canMaintain = userRole === 'admin' || userRole === 'maintainer';
 
   const browsePanel = (
     <div className={sheetExpanded ? 'browse-sheet expanded' : 'browse-sheet'} aria-label="Explorar cooperativas">
@@ -771,6 +823,108 @@ export function App() {
     </div>
   );
 
+  const signInPanel = (
+    <section className="access-card">
+      <p className="eyebrow">Acceso privado</p>
+      <h1>Sandbox de mantainers</h1>
+      <p>
+        El mapa publico queda separado. Altas, edicion, revisiones y contenido interno viven en una pantalla propia con SSO Google y roles por whitelist.
+      </p>
+      {!isFirebaseConfigured() && (
+        <div className="access-warning">
+          Falta configurar Firebase: define VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID y VITE_FIREBASE_APP_ID.
+        </div>
+      )}
+      {authError && <div className="access-warning">{authError}</div>}
+      <IonButton expand="block" disabled={!isFirebaseConfigured() || !authReady} onClick={() => void handleGoogleSignIn()}>
+        <IonIcon icon={personCircleOutline} slot="start" />
+        Continuar con Google
+      </IonButton>
+    </section>
+  );
+
+  const managementPanel = (
+    <main className="workspace-screen">
+      <section className="workspace-hero">
+        <div>
+          <p className="eyebrow">Gestion interna</p>
+          <h1>{appView === 'sandbox' ? 'Sandbox operativo' : 'Administrar plataforma'}</h1>
+          <p>
+            Espacio privado para preparar contenido, validar cooperativas y administrar secciones sin ocupar el mapa publico.
+          </p>
+        </div>
+        {authUser && (
+          <div className="user-pill">
+            <span>{authUser.displayName || authUser.email}</span>
+            <strong>{userRole}</strong>
+          </div>
+        )}
+      </section>
+
+      {!authUser && signInPanel}
+
+      {authUser && !canMaintain && (
+        <section className="access-card">
+          <p className="eyebrow">Cuenta registrada</p>
+          <h2>Acceso de cooperativa o publico</h2>
+          <p>
+            Esta cuenta puede servir para favoritos, perfiles propios e integraciones futuras. Para administrar altas necesita estar en la whitelist de mantainers.
+          </p>
+          <IonButton fill="outline" onClick={() => void handleSignOut()}>
+            <IonIcon icon={logOutOutline} slot="start" />
+            Cerrar sesion
+          </IonButton>
+        </section>
+      )}
+
+      {authUser && canMaintain && (
+        <>
+          <section className="workspace-grid">
+            {[
+              ['Cooperativas', 'Alta, edicion, validacion y cambios enviados por perfiles autogestionados.', peopleOutline],
+              ['Sitios de interes', 'Capas no editables por usuarios finales, con fuentes y fecha de revision.', mapOutline],
+              ['Blog', 'Notas, avances del programa, guias para cooperativas y comunicacion publica.', documentTextOutline],
+              ['Revisiones', 'Cola de cambios pendientes antes de publicar en el mapa publico.', informationCircleOutline],
+            ].map(([title, copy, icon]) => (
+              <article className="workspace-card" key={String(title)}>
+                <IonIcon icon={String(icon)} />
+                <h2>{title}</h2>
+                <p>{copy}</p>
+                <IonButton fill="outline" size="small">Abrir</IonButton>
+              </article>
+            ))}
+          </section>
+
+          <section className="workspace-table">
+            <div className="section-row">
+              <strong>Contenido en revision</strong>
+              <span>mock operativo</span>
+            </div>
+            {COOPS.slice(0, 4).map((coop) => (
+              <button key={coop.id} type="button" className="review-row">
+                <span className="category-dot" style={{ background: CATEGORIES[coop.category].color }} />
+                <span>
+                  <strong>{coop.name}</strong>
+                  <small>{CATEGORIES[coop.category].label} · {coop.neighborhood}</small>
+                </span>
+                <IonBadge color={coop.verified ? 'success' : 'warning'}>{coop.verified ? 'publicada' : 'pendiente'}</IonBadge>
+              </button>
+            ))}
+          </section>
+
+          <div className="workspace-actions">
+            <IonButton onClick={() => goToView('sandbox')} fill={appView === 'sandbox' ? 'solid' : 'outline'}>Sandbox</IonButton>
+            <IonButton onClick={() => goToView('admin')} fill={appView === 'admin' ? 'solid' : 'outline'}>ABM</IonButton>
+            <IonButton fill="outline" onClick={() => void handleSignOut()}>
+              <IonIcon icon={logOutOutline} slot="start" />
+              Salir
+            </IonButton>
+          </div>
+        </>
+      )}
+    </main>
+  );
+
   return (
     <IonApp>
       <IonPage>
@@ -784,70 +938,79 @@ export function App() {
               </span>
             </a>
             <IonButtons slot="end">
-              <IonButton className="desktop-only" shape="round" fill="solid" onClick={() => setAdminOpen(true)}>
-                <IonIcon icon={addOutline} slot="start" />
-                Sumar cooperativa
-              </IonButton>
+              {appView === 'map' ? (
+                <IonButton className="header-action" shape="round" fill="solid" onClick={() => goToView('admin')}>
+                  <IonIcon icon={addOutline} slot="start" />
+                  Sumar cooperativa
+                </IonButton>
+              ) : (
+                <IonButton className="header-action" shape="round" fill="outline" onClick={() => goToView('map')}>
+                  <IonIcon icon={mapOutline} slot="start" />
+                  Volver al mapa
+                </IonButton>
+              )}
             </IonButtons>
           </IonToolbar>
         </IonHeader>
 
-        <IonContent fullscreen scrollY={false}>
-          <main className="product-shell">
-            <section className="map-pane" aria-label="Mapa de cooperativas">
-              <div ref={mapNode} className="leaflet-host" />
-              <div className="map-tools" aria-label="Herramientas del mapa">
-                <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" data-tooltip="Mi ubicación" onClick={() => {
-                  navigator.geolocation?.getCurrentPosition((position) => {
-                    mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
-                  });
-                }}>
-                  <IonIcon icon={locateOutline} />
-                </IonButton>
-                <IonButton fill="clear" aria-label="Abrir asistente" title="Abrir asistente" data-tooltip="Asistente" onClick={() => setAssistantOpen(true)}>
-                  <IonIcon icon={sparklesOutline} />
-                </IonButton>
-                <IonButton fill="clear" aria-label="Acercar mapa" title="Acercar mapa" data-tooltip="Acercar" onClick={() => mapRef.current?.zoomIn()}>
-                  <IonIcon icon={addSharp} />
-                </IonButton>
-                <IonButton fill="clear" aria-label="Alejar mapa" title="Alejar mapa" data-tooltip="Alejar" onClick={() => mapRef.current?.zoomOut()}>
-                  <IonIcon icon={removeSharp} />
-                </IonButton>
-              </div>
-              {!isMobile && (
-                <div className="desktop-map-search" aria-label="Buscar cooperativas en el mapa">
-                  <div className="desktop-map-search-row">
-                    {searchBar}
-                    {categorySelect}
-                  </div>
-                  <div className="desktop-footer-actions">
-                    <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" onClick={() => {
-                      navigator.geolocation?.getCurrentPosition((position) => {
-                        mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
-                      });
-                    }}>
-                      <IonIcon icon={locateOutline} />
-                    </IonButton>
-                    <IonButton fill="clear" aria-label="Abrir asistente" title="Abrir asistente" onClick={() => setAssistantOpen(true)}>
-                      <IonIcon icon={sparklesOutline} />
-                    </IonButton>
-                    <IonButton fill="clear" aria-label="Acercar mapa" title="Acercar mapa" onClick={() => mapRef.current?.zoomIn()}>
-                      <IonIcon icon={addSharp} />
-                    </IonButton>
-                    <IonButton fill="clear" aria-label="Alejar mapa" title="Alejar mapa" onClick={() => mapRef.current?.zoomOut()}>
-                      <IonIcon icon={removeSharp} />
-                    </IonButton>
-                  </div>
+        <IonContent fullscreen scrollY={appView !== 'map'}>
+          {appView === 'map' ? (
+            <main className="product-shell">
+              <section className="map-pane" aria-label="Mapa de cooperativas">
+                <div ref={mapNode} className="leaflet-host" />
+                <div className="map-tools" aria-label="Herramientas del mapa">
+                  <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" data-tooltip="Mi ubicación" onClick={() => {
+                    navigator.geolocation?.getCurrentPosition((position) => {
+                      mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
+                    });
+                  }}>
+                    <IonIcon icon={locateOutline} />
+                  </IonButton>
+                  <IonButton fill="clear" aria-label="Abrir asistente" title="Abrir asistente" data-tooltip="Asistente" onClick={() => setAssistantOpen(true)}>
+                    <IonIcon icon={sparklesOutline} />
+                  </IonButton>
+                  <IonButton fill="clear" aria-label="Acercar mapa" title="Acercar mapa" data-tooltip="Acercar" onClick={() => mapRef.current?.zoomIn()}>
+                    <IonIcon icon={addSharp} />
+                  </IonButton>
+                  <IonButton fill="clear" aria-label="Alejar mapa" title="Alejar mapa" data-tooltip="Alejar" onClick={() => mapRef.current?.zoomOut()}>
+                    <IonIcon icon={removeSharp} />
+                  </IonButton>
                 </div>
-              )}
-            </section>
+                {!isMobile && (
+                  <div className="desktop-map-search" aria-label="Buscar cooperativas en el mapa">
+                    <div className="desktop-map-search-row">
+                      {searchBar}
+                      {categorySelect}
+                    </div>
+                    <div className="desktop-footer-actions">
+                      <IonButton fill="clear" aria-label="Centrar en mi ubicación" title="Centrar en mi ubicación" onClick={() => {
+                        navigator.geolocation?.getCurrentPosition((position) => {
+                          mapRef.current?.flyTo([position.coords.latitude, position.coords.longitude], 15, { duration: 0.6 });
+                        });
+                      }}>
+                        <IonIcon icon={locateOutline} />
+                      </IonButton>
+                      <IonButton fill="clear" aria-label="Abrir asistente" title="Abrir asistente" onClick={() => setAssistantOpen(true)}>
+                        <IonIcon icon={sparklesOutline} />
+                      </IonButton>
+                      <IonButton fill="clear" aria-label="Acercar mapa" title="Acercar mapa" onClick={() => mapRef.current?.zoomIn()}>
+                        <IonIcon icon={addSharp} />
+                      </IonButton>
+                      <IonButton fill="clear" aria-label="Alejar mapa" title="Alejar mapa" onClick={() => mapRef.current?.zoomOut()}>
+                        <IonIcon icon={removeSharp} />
+                      </IonButton>
+                    </div>
+                  </div>
+                )}
+              </section>
 
-            {!isMobile && <aside className="desktop-panel">{browsePanel}</aside>}
+              {!isMobile && <aside className="desktop-panel">{browsePanel}</aside>}
 
-          </main>
+            </main>
+          ) : managementPanel}
         </IonContent>
 
-        {isMobile && (
+        {isMobile && appView === 'map' && (
           <IonModal
             ref={sheetModalRef}
             className="map-sheet-modal"
@@ -969,26 +1132,6 @@ export function App() {
           </IonContent>
         </IonModal>
 
-        <IonModal className="app-modal admin-modal" isOpen={adminOpen} onDidDismiss={() => setAdminOpen(false)}>
-          <IonHeader>
-            <IonToolbar>
-              <IonLabel className="modal-title">Sumar cooperativa</IonLabel>
-              <IonButtons slot="end">
-                <IonButton onClick={() => setAdminOpen(false)}>
-                  <IonIcon icon={closeOutline} />
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent className="admin-content">
-            <IonCard className="admin-card">
-              <p className="eyebrow">Acceso restringido</p>
-              <h2>Alta y edición con roles</h2>
-              <p>SSO Google con whitelist para admin y maintain. Las cooperativas podrían editar su perfil y enviar cambios a revisión.</p>
-              <IonButton expand="block">Continuar con Google</IonButton>
-            </IonCard>
-          </IonContent>
-        </IonModal>
       </IonPage>
     </IonApp>
   );

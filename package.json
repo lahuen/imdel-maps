@@ -12,6 +12,7 @@
   "dependencies": {
     "@ionic/core": "^8.8.6",
     "@ionic/react": "^8.8.6",
+    "firebase": "^12.13.0",
     "ionicons": "^8.0.13",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
